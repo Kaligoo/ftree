@@ -1,8 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  basePath: '/ftree',
-  assetPrefix: '/ftree',
+  /* config options here */
 };
 
 export default nextConfig;
