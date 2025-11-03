@@ -8,7 +8,8 @@ export async function GET() {
     const allPeople = await db.select().from(people);
     return NextResponse.json(allPeople);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch people' }, { status: 500 });
+    console.error('Error fetching people:', error);
+    return NextResponse.json({ error: 'Failed to fetch people', details: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
 }
 

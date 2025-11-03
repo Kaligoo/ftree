@@ -7,7 +7,8 @@ export async function GET() {
     const allRelationships = await db.select().from(relationships);
     return NextResponse.json(allRelationships);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch relationships' }, { status: 500 });
+    console.error('Error fetching relationships:', error);
+    return NextResponse.json({ error: 'Failed to fetch relationships', details: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
 }
 
