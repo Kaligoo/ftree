@@ -9,7 +9,14 @@ export async function GET() {
     return NextResponse.json(allPeople);
   } catch (error) {
     console.error('Error fetching people:', error);
-    return NextResponse.json({ error: 'Failed to fetch people', details: error instanceof Error ? error.message : String(error) }, { status: 500 });
+    const errorDetails = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : '';
+    return NextResponse.json({
+      error: 'Failed to fetch people',
+      details: errorDetails,
+      stack: errorStack,
+      env: process.env.POSTGRES_URL ? 'POSTGRES_URL is set' : 'POSTGRES_URL is NOT set'
+    }, { status: 500 });
   }
 }
 
