@@ -81,8 +81,8 @@ export default function FamilyTreePage() {
   const fetchData = async () => {
     try {
       const [peopleRes, relationshipsRes] = await Promise.all([
-        fetch('/api/people'),
-        fetch('/api/relationships'),
+        fetch('/ftree/api/people'),
+        fetch('/ftree/api/relationships'),
       ]);
 
       if (!peopleRes.ok || !relationshipsRes.ok) {
@@ -159,7 +159,7 @@ export default function FamilyTreePage() {
     if (!newPersonName.trim()) return;
 
     try {
-      const response = await fetch('/api/people', {
+      const response = await fetch('/ftree/api/people', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
