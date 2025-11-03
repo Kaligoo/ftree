@@ -36,28 +36,81 @@ interface Relationship {
 const nodeWidth = 180;
 const nodeHeight = 60;
 
-const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
+const getLayoutedElements = (nodes: Node[], edges: Edge[], relationships: Relationship[]) => {
+  // Build spouse pairs map
+  const spousePairs = new Map<string, string>();
+  relationships.forEach((rel) => {
+    if (rel.relationType === 'spouse') {
+      const id1 = rel.personId.toString();
+      const id2 = rel.relatedPersonId.toString();
+      spousePairs.set(id1, id2);
+      spousePairs.set(id2, id1);
+    }
+  });
+
+  // First, use dagre for initial layout with only parent-child edges
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
-  dagreGraph.setGraph({ rankdir: 'TB', ranksep: 80, nodesep: 100 });
+  dagreGraph.setGraph({ rankdir: 'TB', ranksep: 100, nodesep: 50 });
 
   nodes.forEach((node) => {
     dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
   });
 
+  // Only add parent-child edges to dagre for hierarchy
   edges.forEach((edge) => {
-    dagreGraph.setEdge(edge.source, edge.target);
+    const rel = relationships.find(
+      (r) =>
+        (r.personId.toString() === edge.source && r.relatedPersonId.toString() === edge.target) ||
+        (r.personId.toString() === edge.target && r.relatedPersonId.toString() === edge.source)
+    );
+    if (rel?.relationType === 'child') {
+      dagreGraph.setEdge(edge.source, edge.target);
+    }
   });
 
   dagre.layout(dagreGraph);
 
+  // Apply initial positions
+  const processedSpouses = new Set<string>();
   nodes.forEach((node) => {
     const nodeWithPosition = dagreGraph.node(node.id);
-    node.position = {
-      x: nodeWithPosition.x - nodeWidth / 2,
-      y: nodeWithPosition.y - nodeHeight / 2,
-    };
-    return node;
+
+    if (processedSpouses.has(node.id)) {
+      return; // Already positioned as part of a spouse pair
+    }
+
+    const spouseId = spousePairs.get(node.id);
+
+    if (spouseId && !processedSpouses.has(spouseId)) {
+      // Position spouses side by side
+      const spouseNode = nodes.find((n) => n.id === spouseId);
+      if (spouseNode) {
+        const spousePosition = dagreGraph.node(spouseId);
+
+        // Place both spouses at the same y level
+        const sharedY = Math.min(nodeWithPosition.y, spousePosition.y);
+
+        node.position = {
+          x: nodeWithPosition.x - nodeWidth / 2 - 100,
+          y: sharedY - nodeHeight / 2,
+        };
+
+        spouseNode.position = {
+          x: nodeWithPosition.x - nodeWidth / 2 + 100,
+          y: sharedY - nodeHeight / 2,
+        };
+
+        processedSpouses.add(node.id);
+        processedSpouses.add(spouseId);
+      }
+    } else if (!spouseId) {
+      // No spouse, use dagre position
+      node.position = {
+        x: nodeWithPosition.x - nodeWidth / 2,
+        y: nodeWithPosition.y - nodeHeight / 2,
+      };
+    }
   });
 
   return { nodes, edges };
@@ -137,15 +190,16 @@ export default function FamilyTreePage() {
       source: rel.personId.toString(),
       target: rel.relatedPersonId.toString(),
       label: rel.relationType,
-      type: rel.relationType === 'spouse' ? 'step' : 'smoothstep',
+      type: rel.relationType === 'spouse' ? 'straight' : 'smoothstep',
       animated: false,
       style: {
-        stroke: rel.relationType === 'spouse' ? '#EF4444' : '#3B82F6',
-        strokeWidth: 2,
+        stroke: rel.relationType === 'spouse' ? '#9CA3AF' : '#3B82F6',
+        strokeWidth: rel.relationType === 'spouse' ? 1 : 2,
+        strokeDasharray: rel.relationType === 'spouse' ? '5,5' : undefined,
       },
     }));
 
-    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(newNodes, newEdges);
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(newNodes, newEdges, relationships);
     setNodes(layoutedNodes);
     setEdges(layoutedEdges);
   }, [people, relationships, setNodes, setEdges]);
