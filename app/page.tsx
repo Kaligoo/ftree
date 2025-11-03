@@ -232,9 +232,9 @@ export default function FamilyTreePage() {
             </div>
           )}
 
-          <div className="mt-4 text-sm text-gray-600">
-            <p>Total People: {people.length}</p>
-            <p className="text-xs mt-2">
+          <div className="mt-4 text-sm text-gray-900">
+            <p className="font-medium">Total People: {people.length}</p>
+            <p className="text-xs mt-2 text-gray-700">
               Use mouse wheel to zoom<br />
               Drag to pan around
             </p>
