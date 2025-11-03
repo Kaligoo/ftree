@@ -124,11 +124,34 @@ export default function FamilyTreePage() {
 
   const [newPersonName, setNewPersonName] = useState('');
   const [newPersonBirthYear, setNewPersonBirthYear] = useState('');
+  const [newPersonGender, setNewPersonGender] = useState<'male' | 'female' | ''>('');
+  const [parent1Search, setParent1Search] = useState('');
+  const [parent2Search, setParent2Search] = useState('');
+  const [selectedParent1, setSelectedParent1] = useState<Person | null>(null);
+  const [selectedParent2, setSelectedParent2] = useState<Person | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showParent1Suggestions, setShowParent1Suggestions] = useState(false);
+  const [showParent2Suggestions, setShowParent2Suggestions] = useState(false);
 
   // Fetch data
   useEffect(() => {
     fetchData();
+  }, []);
+
+  // Close suggestion dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.autocomplete-parent1')) {
+        setShowParent1Suggestions(false);
+      }
+      if (!target.closest('.autocomplete-parent2')) {
+        setShowParent2Suggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const fetchData = async () => {
@@ -209,23 +232,71 @@ export default function FamilyTreePage() {
     [setEdges]
   );
 
+  // Filter people based on search input
+  const getFilteredPeople = (searchTerm: string) => {
+    if (!searchTerm.trim()) return [];
+    return people.filter((person) =>
+      person.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  };
+
+  const resetForm = () => {
+    setNewPersonName('');
+    setNewPersonBirthYear('');
+    setNewPersonGender('');
+    setParent1Search('');
+    setParent2Search('');
+    setSelectedParent1(null);
+    setSelectedParent2(null);
+    setShowAddForm(false);
+    setShowParent1Suggestions(false);
+    setShowParent2Suggestions(false);
+  };
+
   const addPerson = async () => {
     if (!newPersonName.trim()) return;
 
     try {
+      // First, create the person
       const response = await fetch('/ftree/api/people', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: newPersonName,
           birthYear: newPersonBirthYear ? parseInt(newPersonBirthYear) : null,
+          gender: newPersonGender || null,
         }),
       });
 
       if (response.ok) {
-        setNewPersonName('');
-        setNewPersonBirthYear('');
-        setShowAddForm(false);
+        const newPerson = await response.json();
+
+        // Create relationships for parents
+        if (selectedParent1) {
+          await fetch('/ftree/api/relationships', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              personId: selectedParent1.id,
+              relatedPersonId: newPerson.id,
+              relationType: 'child',
+            }),
+          });
+        }
+
+        if (selectedParent2) {
+          await fetch('/ftree/api/relationships', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              personId: selectedParent2.id,
+              relatedPersonId: newPerson.id,
+              relationType: 'child',
+            }),
+          });
+        }
+
+        resetForm();
         fetchData();
       }
     } catch (error) {
@@ -275,6 +346,110 @@ export default function FamilyTreePage() {
                 onChange={(e) => setNewPersonBirthYear(e.target.value)}
                 className="w-full px-3 py-2 border rounded"
               />
+              <select
+                value={newPersonGender}
+                onChange={(e) => setNewPersonGender(e.target.value as 'male' | 'female' | '')}
+                className="w-full px-3 py-2 border rounded"
+              >
+                <option value="">Select Gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+
+              {/* Parent 1 Autocomplete */}
+              <div className="relative autocomplete-parent1">
+                <input
+                  type="text"
+                  placeholder="Parent 1 (optional)"
+                  value={selectedParent1 ? selectedParent1.name : parent1Search}
+                  onChange={(e) => {
+                    setParent1Search(e.target.value);
+                    setSelectedParent1(null);
+                    setShowParent1Suggestions(true);
+                  }}
+                  onFocus={() => setShowParent1Suggestions(true)}
+                  className="w-full px-3 py-2 border rounded"
+                />
+                {showParent1Suggestions && parent1Search && !selectedParent1 && (
+                  <div className="absolute z-10 w-full bg-white border rounded-b shadow-lg max-h-40 overflow-y-auto">
+                    {getFilteredPeople(parent1Search).map((person) => (
+                      <div
+                        key={person.id}
+                        onClick={() => {
+                          setSelectedParent1(person);
+                          setParent1Search('');
+                          setShowParent1Suggestions(false);
+                        }}
+                        className="px-3 py-2 hover:bg-blue-100 cursor-pointer"
+                      >
+                        {person.name} {person.birthYear ? `(${person.birthYear})` : ''}
+                      </div>
+                    ))}
+                    {getFilteredPeople(parent1Search).length === 0 && (
+                      <div className="px-3 py-2 text-gray-500">No matches found</div>
+                    )}
+                  </div>
+                )}
+                {selectedParent1 && (
+                  <button
+                    onClick={() => {
+                      setSelectedParent1(null);
+                      setParent1Search('');
+                    }}
+                    className="absolute right-2 top-2 text-gray-500 hover:text-red-500"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Parent 2 Autocomplete */}
+              <div className="relative autocomplete-parent2">
+                <input
+                  type="text"
+                  placeholder="Parent 2 (optional)"
+                  value={selectedParent2 ? selectedParent2.name : parent2Search}
+                  onChange={(e) => {
+                    setParent2Search(e.target.value);
+                    setSelectedParent2(null);
+                    setShowParent2Suggestions(true);
+                  }}
+                  onFocus={() => setShowParent2Suggestions(true)}
+                  className="w-full px-3 py-2 border rounded"
+                />
+                {showParent2Suggestions && parent2Search && !selectedParent2 && (
+                  <div className="absolute z-10 w-full bg-white border rounded-b shadow-lg max-h-40 overflow-y-auto">
+                    {getFilteredPeople(parent2Search).map((person) => (
+                      <div
+                        key={person.id}
+                        onClick={() => {
+                          setSelectedParent2(person);
+                          setParent2Search('');
+                          setShowParent2Suggestions(false);
+                        }}
+                        className="px-3 py-2 hover:bg-blue-100 cursor-pointer"
+                      >
+                        {person.name} {person.birthYear ? `(${person.birthYear})` : ''}
+                      </div>
+                    ))}
+                    {getFilteredPeople(parent2Search).length === 0 && (
+                      <div className="px-3 py-2 text-gray-500">No matches found</div>
+                    )}
+                  </div>
+                )}
+                {selectedParent2 && (
+                  <button
+                    onClick={() => {
+                      setSelectedParent2(null);
+                      setParent2Search('');
+                    }}
+                    className="absolute right-2 top-2 text-gray-500 hover:text-red-500"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
               <div className="flex gap-2">
                 <button
                   onClick={addPerson}
@@ -283,11 +458,7 @@ export default function FamilyTreePage() {
                   Save
                 </button>
                 <button
-                  onClick={() => {
-                    setShowAddForm(false);
-                    setNewPersonName('');
-                    setNewPersonBirthYear('');
-                  }}
+                  onClick={resetForm}
                   className="flex-1 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
                 >
                   Cancel
