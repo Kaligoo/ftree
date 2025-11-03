@@ -1,14 +1,10 @@
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { Pool, neonConfig } from '@neondatabase/serverless';
+import { neon } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from './schema';
-import ws from 'ws';
 
 if (!process.env.POSTGRES_URL) {
   throw new Error('POSTGRES_URL environment variable is not set');
 }
 
-// Configure WebSocket for Node.js environment
-neonConfig.webSocketConstructor = ws;
-
-const pool = new Pool({ connectionString: process.env.POSTGRES_URL });
-export const db = drizzle({ client: pool, schema });
+const sql = neon(process.env.POSTGRES_URL);
+export const db = drizzle(sql, { schema });
