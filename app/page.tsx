@@ -85,11 +85,21 @@ export default function FamilyTreePage() {
         fetch('/api/relationships'),
       ]);
 
+      if (!peopleRes.ok || !relationshipsRes.ok) {
+        console.error('API request failed');
+        return;
+      }
+
       const peopleData = await peopleRes.json();
       const relationshipsData = await relationshipsRes.json();
 
-      setPeople(peopleData);
-      setRelationships(relationshipsData);
+      // Ensure data is an array before setting state
+      if (Array.isArray(peopleData)) {
+        setPeople(peopleData);
+      }
+      if (Array.isArray(relationshipsData)) {
+        setRelationships(relationshipsData);
+      }
     } catch (error) {
       console.error('Failed to fetch data:', error);
     }
