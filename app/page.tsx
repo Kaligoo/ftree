@@ -131,9 +131,12 @@ export default function FamilyTreePage() {
   const [parent2Search, setParent2Search] = useState('');
   const [selectedParent1, setSelectedParent1] = useState<Person | null>(null);
   const [selectedParent2, setSelectedParent2] = useState<Person | null>(null);
+  const [childSearch, setChildSearch] = useState('');
+  const [selectedChildren, setSelectedChildren] = useState<Person[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showParent1Suggestions, setShowParent1Suggestions] = useState(false);
   const [showParent2Suggestions, setShowParent2Suggestions] = useState(false);
+  const [showChildSuggestions, setShowChildSuggestions] = useState(false);
 
   // Fetch data
   useEffect(() => {
@@ -149,6 +152,9 @@ export default function FamilyTreePage() {
       }
       if (!target.closest('.autocomplete-parent2')) {
         setShowParent2Suggestions(false);
+      }
+      if (!target.closest('.autocomplete-children')) {
+        setShowChildSuggestions(false);
       }
     };
 
@@ -255,9 +261,12 @@ export default function FamilyTreePage() {
     setParent2Search('');
     setSelectedParent1(null);
     setSelectedParent2(null);
+    setChildSearch('');
+    setSelectedChildren([]);
     setShowAddForm(false);
     setShowParent1Suggestions(false);
     setShowParent2Suggestions(false);
+    setShowChildSuggestions(false);
   };
 
   const addPerson = async () => {
@@ -298,6 +307,19 @@ export default function FamilyTreePage() {
             body: JSON.stringify({
               personId: selectedParent2.id,
               relatedPersonId: newPerson.id,
+              relationType: 'child',
+            }),
+          });
+        }
+
+        // Create relationships for children
+        for (const child of selectedChildren) {
+          await fetch('/ftree/api/relationships', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              personId: newPerson.id,
+              relatedPersonId: child.id,
               relationType: 'child',
             }),
           });
@@ -454,6 +476,63 @@ export default function FamilyTreePage() {
                   >
                     ✕
                   </button>
+                )}
+              </div>
+
+              {/* Children Autocomplete */}
+              <div className="relative autocomplete-children">
+                <input
+                  type="text"
+                  placeholder="Add child (optional)"
+                  value={childSearch}
+                  onChange={(e) => {
+                    setChildSearch(e.target.value);
+                    setShowChildSuggestions(true);
+                  }}
+                  onFocus={() => setShowChildSuggestions(true)}
+                  className="w-full px-3 py-2 border rounded text-gray-900"
+                />
+                {showChildSuggestions && childSearch && (
+                  <div className="absolute z-10 w-full bg-white border rounded-b shadow-lg max-h-40 overflow-y-auto">
+                    {getFilteredPeople(childSearch)
+                      .filter((person) => !selectedChildren.find((c) => c.id === person.id))
+                      .map((person) => (
+                        <div
+                          key={person.id}
+                          onClick={() => {
+                            setSelectedChildren([...selectedChildren, person]);
+                            setChildSearch('');
+                            setShowChildSuggestions(false);
+                          }}
+                          className="px-3 py-2 hover:bg-blue-100 cursor-pointer text-gray-900"
+                        >
+                          {person.name} {person.birthYear ? `(${person.birthYear})` : ''}
+                        </div>
+                      ))}
+                    {getFilteredPeople(childSearch).filter((p) => !selectedChildren.find((c) => c.id === p.id)).length === 0 && (
+                      <div className="px-3 py-2 text-gray-600">No matches found</div>
+                    )}
+                  </div>
+                )}
+                {selectedChildren.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {selectedChildren.map((child) => (
+                      <div
+                        key={child.id}
+                        className="bg-blue-100 text-gray-900 px-2 py-1 rounded text-sm flex items-center gap-1"
+                      >
+                        {child.name}
+                        <button
+                          onClick={() => {
+                            setSelectedChildren(selectedChildren.filter((c) => c.id !== child.id));
+                          }}
+                          className="text-gray-600 hover:text-red-500 font-bold"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
 
