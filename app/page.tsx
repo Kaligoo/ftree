@@ -337,19 +337,19 @@ export default function FamilyTreePage() {
                 placeholder="Name"
                 value={newPersonName}
                 onChange={(e) => setNewPersonName(e.target.value)}
-                className="w-full px-3 py-2 border rounded"
+                className="w-full px-3 py-2 border rounded text-gray-900"
               />
               <input
                 type="number"
                 placeholder="Birth Year"
                 value={newPersonBirthYear}
                 onChange={(e) => setNewPersonBirthYear(e.target.value)}
-                className="w-full px-3 py-2 border rounded"
+                className="w-full px-3 py-2 border rounded text-gray-900"
               />
               <select
                 value={newPersonGender}
                 onChange={(e) => setNewPersonGender(e.target.value as 'male' | 'female' | '')}
-                className="w-full px-3 py-2 border rounded"
+                className="w-full px-3 py-2 border rounded text-gray-900"
               >
                 <option value="">Select Gender</option>
                 <option value="male">Male</option>
@@ -368,7 +368,7 @@ export default function FamilyTreePage() {
                     setShowParent1Suggestions(true);
                   }}
                   onFocus={() => setShowParent1Suggestions(true)}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded text-gray-900"
                 />
                 {showParent1Suggestions && parent1Search && !selectedParent1 && (
                   <div className="absolute z-10 w-full bg-white border rounded-b shadow-lg max-h-40 overflow-y-auto">
@@ -415,7 +415,7 @@ export default function FamilyTreePage() {
                     setShowParent2Suggestions(true);
                   }}
                   onFocus={() => setShowParent2Suggestions(true)}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded text-gray-900"
                 />
                 {showParent2Suggestions && parent2Search && !selectedParent2 && (
                   <div className="absolute z-10 w-full bg-white border rounded-b shadow-lg max-h-40 overflow-y-auto">
