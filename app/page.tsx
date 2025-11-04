@@ -212,6 +212,15 @@ export default function FamilyTreePage() {
   const [showParent2Suggestions, setShowParent2Suggestions] = useState(false);
   const [showChildSuggestions, setShowChildSuggestions] = useState(false);
 
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingPerson, setEditingPerson] = useState<Person | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editBirthYear, setEditBirthYear] = useState('');
+  const [editDeathYear, setEditDeathYear] = useState('');
+  const [editGender, setEditGender] = useState<'male' | 'female' | ''>('');
+
   // Fetch data
   useEffect(() => {
     fetchData();
@@ -229,6 +238,9 @@ export default function FamilyTreePage() {
       }
       if (!target.closest('.autocomplete-children')) {
         setShowChildSuggestions(false);
+      }
+      if (!target.closest('.context-menu')) {
+        setContextMenu(null);
       }
     };
 
@@ -407,6 +419,74 @@ export default function FamilyTreePage() {
     }
   };
 
+  const handleNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
+    event.preventDefault();
+    setContextMenu({
+      x: event.clientX,
+      y: event.clientY,
+      nodeId: node.id,
+    });
+  }, []);
+
+  const handleEditPerson = () => {
+    if (!contextMenu) return;
+    const person = people.find((p) => p.id.toString() === contextMenu.nodeId);
+    if (!person) return;
+
+    setEditingPerson(person);
+    setEditName(person.name);
+    setEditBirthYear(person.birthYear?.toString() || '');
+    setEditDeathYear(person.deathYear?.toString() || '');
+    setEditGender((person.gender as 'male' | 'female') || '');
+    setShowEditDialog(true);
+    setContextMenu(null);
+  };
+
+  const saveEditPerson = async () => {
+    if (!editingPerson) return;
+
+    try {
+      const response = await fetch(`/ftree/api/people/${editingPerson.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editName,
+          birthYear: editBirthYear ? parseInt(editBirthYear) : null,
+          deathYear: editDeathYear ? parseInt(editDeathYear) : null,
+          gender: editGender || null,
+        }),
+      });
+
+      if (response.ok) {
+        setShowEditDialog(false);
+        setEditingPerson(null);
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Failed to update person:', error);
+    }
+  };
+
+  const handleDeletePerson = async () => {
+    if (!contextMenu) return;
+    if (!confirm('Are you sure you want to delete this person? This will also delete all their relationships.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/ftree/api/people/${contextMenu.nodeId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setContextMenu(null);
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Failed to delete person:', error);
+    }
+  };
+
   return (
     <div className="w-screen h-screen">
       <ReactFlow
@@ -415,6 +495,7 @@ export default function FamilyTreePage() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onNodeContextMenu={handleNodeContextMenu}
         fitView
         minZoom={0.1}
         maxZoom={2}
@@ -636,6 +717,85 @@ export default function FamilyTreePage() {
           </div>
         </Panel>
       </ReactFlow>
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <div
+          className="context-menu fixed bg-white border-2 border-gray-300 rounded shadow-lg z-50"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+        >
+          <button
+            onClick={handleEditPerson}
+            className="block w-full text-left px-4 py-2 hover:bg-blue-100 text-gray-900"
+          >
+            Edit
+          </button>
+          <button
+            onClick={handleDeletePerson}
+            className="block w-full text-left px-4 py-2 hover:bg-red-100 text-red-600"
+          >
+            Delete
+          </button>
+        </div>
+      )}
+
+      {/* Edit Dialog */}
+      {showEditDialog && editingPerson && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4 text-gray-900">Edit Person</h2>
+            <div className="space-y-3">
+              <input
+                type="text"
+                placeholder="Name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full px-3 py-2 border rounded text-gray-900"
+              />
+              <input
+                type="number"
+                placeholder="Birth Year"
+                value={editBirthYear}
+                onChange={(e) => setEditBirthYear(e.target.value)}
+                className="w-full px-3 py-2 border rounded text-gray-900"
+              />
+              <input
+                type="number"
+                placeholder="Death Year (optional)"
+                value={editDeathYear}
+                onChange={(e) => setEditDeathYear(e.target.value)}
+                className="w-full px-3 py-2 border rounded text-gray-900"
+              />
+              <select
+                value={editGender}
+                onChange={(e) => setEditGender(e.target.value as 'male' | 'female' | '')}
+                className="w-full px-3 py-2 border rounded text-gray-900"
+              >
+                <option value="">Select Gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={saveEditPerson}
+                  className="flex-1 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => {
+                    setShowEditDialog(false);
+                    setEditingPerson(null);
+                  }}
+                  className="flex-1 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
