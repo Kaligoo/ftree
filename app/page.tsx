@@ -13,9 +13,8 @@ import ReactFlow, {
   Background,
   BackgroundVariant,
   Panel,
-  BaseEdge,
-  EdgeProps,
-  getStraightPath,
+  Handle,
+  Position,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import dagre from 'dagre';
@@ -191,7 +190,11 @@ export default function FamilyTreePage() {
       type: 'default',
       data: {
         label: (
-          <div className="text-center">
+          <div className="text-center relative">
+            <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0 }} />
+            <Handle type="source" position={Position.Bottom} id="bottom" style={{ opacity: 0 }} />
+            <Handle type="source" position={Position.Left} id="left" style={{ opacity: 0 }} />
+            <Handle type="source" position={Position.Right} id="right" style={{ opacity: 0 }} />
             <div className="font-semibold">{person.name}</div>
             {person.birthYear && (
               <div className="text-xs text-gray-600">
