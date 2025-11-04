@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import ReactFlow, {
   Node,
   Edge,
@@ -13,6 +13,9 @@ import ReactFlow, {
   Background,
   BackgroundVariant,
   Panel,
+  BaseEdge,
+  EdgeProps,
+  getStraightPath,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import dagre from 'dagre';
@@ -212,9 +215,10 @@ export default function FamilyTreePage() {
       id: `${rel.personId}-${rel.relatedPersonId}`,
       source: rel.personId.toString(),
       target: rel.relatedPersonId.toString(),
-      label: rel.relationType,
-      type: rel.relationType === 'spouse' ? 'straight' : 'smoothstep',
+      type: rel.relationType === 'spouse' ? 'straight' : 'step',
       animated: false,
+      sourceHandle: rel.relationType === 'spouse' ? 'right' : 'bottom',
+      targetHandle: rel.relationType === 'spouse' ? 'left' : 'top',
       style: {
         stroke: rel.relationType === 'spouse' ? '#9CA3AF' : '#3B82F6',
         strokeWidth: rel.relationType === 'spouse' ? 1 : 2,
