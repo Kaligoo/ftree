@@ -50,10 +50,31 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], relationships: Relati
     }
   });
 
+  // Build parent-child relationships map
+  const parentToChildren = new Map<string, string[]>();
+  const childToParents = new Map<string, string[]>();
+
+  relationships.forEach((rel) => {
+    if (rel.relationType === 'child') {
+      const parentId = rel.personId.toString();
+      const childId = rel.relatedPersonId.toString();
+
+      if (!parentToChildren.has(parentId)) {
+        parentToChildren.set(parentId, []);
+      }
+      parentToChildren.get(parentId)!.push(childId);
+
+      if (!childToParents.has(childId)) {
+        childToParents.set(childId, []);
+      }
+      childToParents.get(childId)!.push(parentId);
+    }
+  });
+
   // First, use dagre for initial layout with only parent-child edges
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
-  dagreGraph.setGraph({ rankdir: 'TB', ranksep: 100, nodesep: 50 });
+  dagreGraph.setGraph({ rankdir: 'TB', ranksep: 100, nodesep: 100 });
 
   nodes.forEach((node) => {
     dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
@@ -73,13 +94,15 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], relationships: Relati
 
   dagre.layout(dagreGraph);
 
-  // Apply initial positions
+  // Position spouses side by side and center children below them
   const processedSpouses = new Set<string>();
+  const processedChildren = new Set<string>();
+
   nodes.forEach((node) => {
     const nodeWithPosition = dagreGraph.node(node.id);
 
-    if (processedSpouses.has(node.id)) {
-      return; // Already positioned as part of a spouse pair
+    if (processedSpouses.has(node.id) || processedChildren.has(node.id)) {
+      return; // Already positioned
     }
 
     const spouseId = spousePairs.get(node.id);
@@ -89,29 +112,80 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], relationships: Relati
       const spouseNode = nodes.find((n) => n.id === spouseId);
       if (spouseNode) {
         const spousePosition = dagreGraph.node(spouseId);
-
-        // Place both spouses at the same y level
         const sharedY = Math.min(nodeWithPosition.y, spousePosition.y);
 
+        // Position the spouse pair
+        const centerX = nodeWithPosition.x;
         node.position = {
-          x: nodeWithPosition.x - nodeWidth / 2 - 100,
+          x: centerX - nodeWidth / 2 - 100,
           y: sharedY - nodeHeight / 2,
         };
 
         spouseNode.position = {
-          x: nodeWithPosition.x - nodeWidth / 2 + 100,
+          x: centerX - nodeWidth / 2 + 100,
           y: sharedY - nodeHeight / 2,
         };
 
         processedSpouses.add(node.id);
         processedSpouses.add(spouseId);
+
+        // Get children of this couple
+        const children1 = parentToChildren.get(node.id) || [];
+        const children2 = parentToChildren.get(spouseId) || [];
+        const sharedChildren = children1.filter((child) => children2.includes(child));
+
+        if (sharedChildren.length > 0) {
+          // Center children below the couple
+          const totalWidth = (sharedChildren.length - 1) * (nodeWidth + 50);
+          const startX = centerX - totalWidth / 2;
+
+          sharedChildren.forEach((childId, index) => {
+            const childNode = nodes.find((n) => n.id === childId);
+            if (childNode) {
+              const childPosition = dagreGraph.node(childId);
+              childNode.position = {
+                x: startX + index * (nodeWidth + 50) - nodeWidth / 2,
+                y: childPosition.y - nodeHeight / 2,
+              };
+              processedChildren.add(childId);
+            }
+          });
+        }
       }
-    } else if (!spouseId) {
-      // No spouse, use dagre position
-      node.position = {
-        x: nodeWithPosition.x - nodeWidth / 2,
-        y: nodeWithPosition.y - nodeHeight / 2,
-      };
+    } else if (!spouseId && !processedChildren.has(node.id)) {
+      // No spouse, check if this person has children
+      const children = parentToChildren.get(node.id) || [];
+
+      if (children.length > 0) {
+        // Single parent with children
+        const centerX = nodeWithPosition.x;
+        node.position = {
+          x: centerX - nodeWidth / 2,
+          y: nodeWithPosition.y - nodeHeight / 2,
+        };
+
+        // Center children below single parent
+        const totalWidth = (children.length - 1) * (nodeWidth + 50);
+        const startX = centerX - totalWidth / 2;
+
+        children.forEach((childId, index) => {
+          const childNode = nodes.find((n) => n.id === childId);
+          if (childNode) {
+            const childPosition = dagreGraph.node(childId);
+            childNode.position = {
+              x: startX + index * (nodeWidth + 50) - nodeWidth / 2,
+              y: childPosition.y - nodeHeight / 2,
+            };
+            processedChildren.add(childId);
+          }
+        });
+      } else {
+        // No spouse and no children, use dagre position
+        node.position = {
+          x: nodeWithPosition.x - nodeWidth / 2,
+          y: nodeWithPosition.y - nodeHeight / 2,
+        };
+      }
     }
   });
 
