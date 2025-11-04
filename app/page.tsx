@@ -321,7 +321,7 @@ export default function FamilyTreePage() {
         <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
 
         <Panel position="top-left" className="bg-white p-4 rounded-lg shadow-lg">
-          <h1 className="text-2xl font-bold mb-4">Family Tree</h1>
+          <h1 className="text-2xl font-bold mb-4 text-gray-900">Family Tree</h1>
 
           {!showAddForm ? (
             <button
@@ -380,13 +380,13 @@ export default function FamilyTreePage() {
                           setParent1Search('');
                           setShowParent1Suggestions(false);
                         }}
-                        className="px-3 py-2 hover:bg-blue-100 cursor-pointer"
+                        className="px-3 py-2 hover:bg-blue-100 cursor-pointer text-gray-900"
                       >
                         {person.name} {person.birthYear ? `(${person.birthYear})` : ''}
                       </div>
                     ))}
                     {getFilteredPeople(parent1Search).length === 0 && (
-                      <div className="px-3 py-2 text-gray-500">No matches found</div>
+                      <div className="px-3 py-2 text-gray-600">No matches found</div>
                     )}
                   </div>
                 )}
@@ -427,13 +427,13 @@ export default function FamilyTreePage() {
                           setParent2Search('');
                           setShowParent2Suggestions(false);
                         }}
-                        className="px-3 py-2 hover:bg-blue-100 cursor-pointer"
+                        className="px-3 py-2 hover:bg-blue-100 cursor-pointer text-gray-900"
                       >
                         {person.name} {person.birthYear ? `(${person.birthYear})` : ''}
                       </div>
                     ))}
                     {getFilteredPeople(parent2Search).length === 0 && (
-                      <div className="px-3 py-2 text-gray-500">No matches found</div>
+                      <div className="px-3 py-2 text-gray-600">No matches found</div>
                     )}
                   </div>
                 )}
