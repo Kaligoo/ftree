@@ -199,6 +199,19 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], relationships: Relati
     }
   });
 
+  // Ensure all nodes have a position set (fallback for any missed nodes)
+  nodes.forEach((node) => {
+    if (!node.position || (node.position.x === 0 && node.position.y === 0)) {
+      const nodeWithPosition = dagreGraph.node(node.id);
+      if (nodeWithPosition) {
+        node.position = {
+          x: nodeWithPosition.x - nodeWidth / 2,
+          y: nodeWithPosition.y - nodeHeight / 2,
+        };
+      }
+    }
+  });
+
   return { nodes, edges };
 };
 
