@@ -123,15 +123,16 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], relationships: Relati
         const spousePosition = dagreGraph.node(spouseId);
         const sharedY = Math.min(nodeWithPosition.y, spousePosition.y);
 
-        // Position the spouse pair
+        // Position the spouse pair with more horizontal spacing
         const centerX = nodeWithPosition.x;
+        const spouseSpacing = 150; // Increased from 100 to prevent overlapping
         node.position = {
-          x: centerX - nodeWidth / 2 - 100,
+          x: centerX - nodeWidth / 2 - spouseSpacing,
           y: sharedY - nodeHeight / 2,
         };
 
         spouseNode.position = {
-          x: centerX - nodeWidth / 2 + 100,
+          x: centerX - nodeWidth / 2 + spouseSpacing,
           y: sharedY - nodeHeight / 2,
         };
 
