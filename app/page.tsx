@@ -616,13 +616,15 @@ function FamilyTreeInner() {
                 onChange={(e) => setNewPersonBirthYear(e.target.value)}
                 className="w-full px-3 py-2 border rounded text-gray-900"
               />
-              <input
-                type="date"
-                placeholder="Birth Date (optional)"
-                value={newPersonBirthDate}
-                onChange={(e) => setNewPersonBirthDate(e.target.value)}
-                className="w-full px-3 py-2 border rounded text-gray-900"
-              />
+              <div>
+                <label className="block text-xs text-gray-700 mb-1">Birth Date (optional)</label>
+                <input
+                  type="date"
+                  value={newPersonBirthDate}
+                  onChange={(e) => setNewPersonBirthDate(e.target.value)}
+                  className="w-full px-3 py-2 border rounded text-gray-900"
+                />
+              </div>
               <input
                 type="text"
                 placeholder="Birth Place (optional)"
@@ -637,13 +639,15 @@ function FamilyTreeInner() {
                 onChange={(e) => setNewPersonDeathYear(e.target.value)}
                 className="w-full px-3 py-2 border rounded text-gray-900"
               />
-              <input
-                type="date"
-                placeholder="Death Date (optional)"
-                value={newPersonDeathDate}
-                onChange={(e) => setNewPersonDeathDate(e.target.value)}
-                className="w-full px-3 py-2 border rounded text-gray-900"
-              />
+              <div>
+                <label className="block text-xs text-gray-700 mb-1">Death Date (optional)</label>
+                <input
+                  type="date"
+                  value={newPersonDeathDate}
+                  onChange={(e) => setNewPersonDeathDate(e.target.value)}
+                  className="w-full px-3 py-2 border rounded text-gray-900"
+                />
+              </div>
               <input
                 type="text"
                 placeholder="Death Place (optional)"
@@ -918,13 +922,15 @@ function FamilyTreeInner() {
                 onChange={(e) => setEditBirthYear(e.target.value)}
                 className="w-full px-3 py-2 border rounded text-gray-900"
               />
-              <input
-                type="date"
-                placeholder="Birth Date (optional)"
-                value={editBirthDate}
-                onChange={(e) => setEditBirthDate(e.target.value)}
-                className="w-full px-3 py-2 border rounded text-gray-900"
-              />
+              <div>
+                <label className="block text-xs text-gray-700 mb-1">Birth Date (optional)</label>
+                <input
+                  type="date"
+                  value={editBirthDate}
+                  onChange={(e) => setEditBirthDate(e.target.value)}
+                  className="w-full px-3 py-2 border rounded text-gray-900"
+                />
+              </div>
               <input
                 type="text"
                 placeholder="Birth Place (optional)"
@@ -939,13 +945,15 @@ function FamilyTreeInner() {
                 onChange={(e) => setEditDeathYear(e.target.value)}
                 className="w-full px-3 py-2 border rounded text-gray-900"
               />
-              <input
-                type="date"
-                placeholder="Death Date (optional)"
-                value={editDeathDate}
-                onChange={(e) => setEditDeathDate(e.target.value)}
-                className="w-full px-3 py-2 border rounded text-gray-900"
-              />
+              <div>
+                <label className="block text-xs text-gray-700 mb-1">Death Date (optional)</label>
+                <input
+                  type="date"
+                  value={editDeathDate}
+                  onChange={(e) => setEditDeathDate(e.target.value)}
+                  className="w-full px-3 py-2 border rounded text-gray-900"
+                />
+              </div>
               <input
                 type="text"
                 placeholder="Death Place (optional)"
