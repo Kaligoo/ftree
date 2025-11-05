@@ -15,6 +15,8 @@ import ReactFlow, {
   Panel,
   Handle,
   Position,
+  useReactFlow,
+  ReactFlowProvider,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import dagre from 'dagre';
@@ -22,9 +24,16 @@ import dagre from 'dagre';
 interface Person {
   id: number;
   name: string;
+  maidenName: string | null;
   birthYear: number | null;
+  birthDate: string | null;
+  birthPlace: string | null;
   deathYear: number | null;
+  deathDate: string | null;
+  deathPlace: string | null;
+  marriagePlace: string | null;
   gender: string | null;
+  isFavorite: boolean;
   notes: string | null;
 }
 
@@ -192,14 +201,22 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], relationships: Relati
   return { nodes, edges };
 };
 
-export default function FamilyTreePage() {
+function FamilyTreeInner() {
+  const { setCenter } = useReactFlow();
   const [people, setPeople] = useState<Person[]>([]);
   const [relationships, setRelationships] = useState<Relationship[]>([]);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   const [newPersonName, setNewPersonName] = useState('');
+  const [newPersonMaidenName, setNewPersonMaidenName] = useState('');
   const [newPersonBirthYear, setNewPersonBirthYear] = useState('');
+  const [newPersonBirthDate, setNewPersonBirthDate] = useState('');
+  const [newPersonBirthPlace, setNewPersonBirthPlace] = useState('');
+  const [newPersonDeathYear, setNewPersonDeathYear] = useState('');
+  const [newPersonDeathDate, setNewPersonDeathDate] = useState('');
+  const [newPersonDeathPlace, setNewPersonDeathPlace] = useState('');
+  const [newPersonMarriagePlace, setNewPersonMarriagePlace] = useState('');
   const [newPersonGender, setNewPersonGender] = useState<'male' | 'female' | ''>('');
   const [parent1Search, setParent1Search] = useState('');
   const [parent2Search, setParent2Search] = useState('');
@@ -217,8 +234,14 @@ export default function FamilyTreePage() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingPerson, setEditingPerson] = useState<Person | null>(null);
   const [editName, setEditName] = useState('');
+  const [editMaidenName, setEditMaidenName] = useState('');
   const [editBirthYear, setEditBirthYear] = useState('');
+  const [editBirthDate, setEditBirthDate] = useState('');
+  const [editBirthPlace, setEditBirthPlace] = useState('');
   const [editDeathYear, setEditDeathYear] = useState('');
+  const [editDeathDate, setEditDeathDate] = useState('');
+  const [editDeathPlace, setEditDeathPlace] = useState('');
+  const [editMarriagePlace, setEditMarriagePlace] = useState('');
   const [editGender, setEditGender] = useState<'male' | 'female' | ''>('');
 
   // Fetch data
@@ -331,6 +354,13 @@ export default function FamilyTreePage() {
     [setEdges]
   );
 
+  const handleZoomToFavorite = useCallback((personId: number) => {
+    const node = nodes.find((n) => n.id === personId.toString());
+    if (node && setCenter) {
+      setCenter(node.position.x + nodeWidth / 2, node.position.y + nodeHeight / 2, { zoom: 1.5, duration: 800 });
+    }
+  }, [nodes, setCenter]);
+
   // Filter people based on search input
   const getFilteredPeople = (searchTerm: string) => {
     if (!searchTerm.trim()) return [];
@@ -341,7 +371,14 @@ export default function FamilyTreePage() {
 
   const resetForm = () => {
     setNewPersonName('');
+    setNewPersonMaidenName('');
     setNewPersonBirthYear('');
+    setNewPersonBirthDate('');
+    setNewPersonBirthPlace('');
+    setNewPersonDeathYear('');
+    setNewPersonDeathDate('');
+    setNewPersonDeathPlace('');
+    setNewPersonMarriagePlace('');
     setNewPersonGender('');
     setParent1Search('');
     setParent2Search('');
@@ -365,7 +402,14 @@ export default function FamilyTreePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: newPersonName,
+          maidenName: newPersonMaidenName || null,
           birthYear: newPersonBirthYear ? parseInt(newPersonBirthYear) : null,
+          birthDate: newPersonBirthDate || null,
+          birthPlace: newPersonBirthPlace || null,
+          deathYear: newPersonDeathYear ? parseInt(newPersonDeathYear) : null,
+          deathDate: newPersonDeathDate || null,
+          deathPlace: newPersonDeathPlace || null,
+          marriagePlace: newPersonMarriagePlace || null,
           gender: newPersonGender || null,
         }),
       });
@@ -435,8 +479,14 @@ export default function FamilyTreePage() {
 
     setEditingPerson(person);
     setEditName(person.name);
+    setEditMaidenName(person.maidenName || '');
     setEditBirthYear(person.birthYear?.toString() || '');
+    setEditBirthDate(person.birthDate || '');
+    setEditBirthPlace(person.birthPlace || '');
     setEditDeathYear(person.deathYear?.toString() || '');
+    setEditDeathDate(person.deathDate || '');
+    setEditDeathPlace(person.deathPlace || '');
+    setEditMarriagePlace(person.marriagePlace || '');
     setEditGender((person.gender as 'male' | 'female') || '');
     setShowEditDialog(true);
     setContextMenu(null);
@@ -451,8 +501,14 @@ export default function FamilyTreePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: editName,
+          maidenName: editMaidenName || null,
           birthYear: editBirthYear ? parseInt(editBirthYear) : null,
+          birthDate: editBirthDate || null,
+          birthPlace: editBirthPlace || null,
           deathYear: editDeathYear ? parseInt(editDeathYear) : null,
+          deathDate: editDeathDate || null,
+          deathPlace: editDeathPlace || null,
+          marriagePlace: editMarriagePlace || null,
           gender: editGender || null,
         }),
       });
@@ -464,6 +520,29 @@ export default function FamilyTreePage() {
       }
     } catch (error) {
       console.error('Failed to update person:', error);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!contextMenu) return;
+    const person = people.find((p) => p.id.toString() === contextMenu.nodeId);
+    if (!person) return;
+
+    try {
+      const response = await fetch(`/ftree/api/people/${contextMenu.nodeId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          isFavorite: !person.isFavorite,
+        }),
+      });
+
+      if (response.ok) {
+        setContextMenu(null);
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
     }
   };
 
@@ -524,10 +603,59 @@ export default function FamilyTreePage() {
                 className="w-full px-3 py-2 border rounded text-gray-900"
               />
               <input
+                type="text"
+                placeholder="Maiden Name (optional)"
+                value={newPersonMaidenName}
+                onChange={(e) => setNewPersonMaidenName(e.target.value)}
+                className="w-full px-3 py-2 border rounded text-gray-900"
+              />
+              <input
                 type="number"
                 placeholder="Birth Year"
                 value={newPersonBirthYear}
                 onChange={(e) => setNewPersonBirthYear(e.target.value)}
+                className="w-full px-3 py-2 border rounded text-gray-900"
+              />
+              <input
+                type="date"
+                placeholder="Birth Date (optional)"
+                value={newPersonBirthDate}
+                onChange={(e) => setNewPersonBirthDate(e.target.value)}
+                className="w-full px-3 py-2 border rounded text-gray-900"
+              />
+              <input
+                type="text"
+                placeholder="Birth Place (optional)"
+                value={newPersonBirthPlace}
+                onChange={(e) => setNewPersonBirthPlace(e.target.value)}
+                className="w-full px-3 py-2 border rounded text-gray-900"
+              />
+              <input
+                type="number"
+                placeholder="Death Year (optional)"
+                value={newPersonDeathYear}
+                onChange={(e) => setNewPersonDeathYear(e.target.value)}
+                className="w-full px-3 py-2 border rounded text-gray-900"
+              />
+              <input
+                type="date"
+                placeholder="Death Date (optional)"
+                value={newPersonDeathDate}
+                onChange={(e) => setNewPersonDeathDate(e.target.value)}
+                className="w-full px-3 py-2 border rounded text-gray-900"
+              />
+              <input
+                type="text"
+                placeholder="Death Place (optional)"
+                value={newPersonDeathPlace}
+                onChange={(e) => setNewPersonDeathPlace(e.target.value)}
+                className="w-full px-3 py-2 border rounded text-gray-900"
+              />
+              <input
+                type="text"
+                placeholder="Marriage Place (optional)"
+                value={newPersonMarriagePlace}
+                onChange={(e) => setNewPersonMarriagePlace(e.target.value)}
                 className="w-full px-3 py-2 border rounded text-gray-900"
               />
               <select
@@ -710,6 +838,24 @@ export default function FamilyTreePage() {
 
           <div className="mt-4 text-sm text-gray-900">
             <p className="font-medium">Total People: {people.length}</p>
+
+            {people.filter((p) => p.isFavorite).length > 0 && (
+              <div className="mt-3">
+                <p className="font-medium mb-2">Favorites:</p>
+                <div className="space-y-1">
+                  {people.filter((p) => p.isFavorite).map((person) => (
+                    <button
+                      key={person.id}
+                      onClick={() => handleZoomToFavorite(person.id)}
+                      className="w-full text-left px-2 py-1 hover:bg-yellow-100 rounded text-xs text-gray-900"
+                    >
+                      {person.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <p className="text-xs mt-2 text-gray-700">
               Use mouse wheel to zoom<br />
               Drag to pan around
@@ -731,6 +877,12 @@ export default function FamilyTreePage() {
             Edit
           </button>
           <button
+            onClick={handleToggleFavorite}
+            className="block w-full text-left px-4 py-2 hover:bg-yellow-100 text-gray-900"
+          >
+            {people.find((p) => p.id.toString() === contextMenu.nodeId)?.isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+          </button>
+          <button
             onClick={handleDeletePerson}
             className="block w-full text-left px-4 py-2 hover:bg-red-100 text-red-600"
           >
@@ -744,12 +896,19 @@ export default function FamilyTreePage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
             <h2 className="text-xl font-bold mb-4 text-gray-900">Edit Person</h2>
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-96 overflow-y-auto">
               <input
                 type="text"
                 placeholder="Name"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
+                className="w-full px-3 py-2 border rounded text-gray-900"
+              />
+              <input
+                type="text"
+                placeholder="Maiden Name (optional)"
+                value={editMaidenName}
+                onChange={(e) => setEditMaidenName(e.target.value)}
                 className="w-full px-3 py-2 border rounded text-gray-900"
               />
               <input
@@ -760,10 +919,45 @@ export default function FamilyTreePage() {
                 className="w-full px-3 py-2 border rounded text-gray-900"
               />
               <input
+                type="date"
+                placeholder="Birth Date (optional)"
+                value={editBirthDate}
+                onChange={(e) => setEditBirthDate(e.target.value)}
+                className="w-full px-3 py-2 border rounded text-gray-900"
+              />
+              <input
+                type="text"
+                placeholder="Birth Place (optional)"
+                value={editBirthPlace}
+                onChange={(e) => setEditBirthPlace(e.target.value)}
+                className="w-full px-3 py-2 border rounded text-gray-900"
+              />
+              <input
                 type="number"
                 placeholder="Death Year (optional)"
                 value={editDeathYear}
                 onChange={(e) => setEditDeathYear(e.target.value)}
+                className="w-full px-3 py-2 border rounded text-gray-900"
+              />
+              <input
+                type="date"
+                placeholder="Death Date (optional)"
+                value={editDeathDate}
+                onChange={(e) => setEditDeathDate(e.target.value)}
+                className="w-full px-3 py-2 border rounded text-gray-900"
+              />
+              <input
+                type="text"
+                placeholder="Death Place (optional)"
+                value={editDeathPlace}
+                onChange={(e) => setEditDeathPlace(e.target.value)}
+                className="w-full px-3 py-2 border rounded text-gray-900"
+              />
+              <input
+                type="text"
+                placeholder="Marriage Place (optional)"
+                value={editMarriagePlace}
+                onChange={(e) => setEditMarriagePlace(e.target.value)}
                 className="w-full px-3 py-2 border rounded text-gray-900"
               />
               <select
@@ -799,3 +993,4 @@ export default function FamilyTreePage() {
     </div>
   );
 }
+export default function FamilyTreePage() { return ( <ReactFlowProvider> <FamilyTreeInner /> </ReactFlowProvider> ); }

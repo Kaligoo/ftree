@@ -25,9 +25,16 @@ export async function POST(request: Request) {
     const body = await request.json();
     const [newPerson] = await db.insert(people).values({
       name: body.name,
+      maidenName: body.maidenName || null,
       birthYear: body.birthYear || null,
+      birthDate: body.birthDate || null,
+      birthPlace: body.birthPlace || null,
       deathYear: body.deathYear || null,
+      deathDate: body.deathDate || null,
+      deathPlace: body.deathPlace || null,
+      marriagePlace: body.marriagePlace || null,
       gender: body.gender || null,
+      isFavorite: body.isFavorite || false,
       notes: body.notes || null,
     }).returning();
 

@@ -1,12 +1,19 @@
-import { pgTable, serial, varchar, integer, timestamp, text } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, integer, timestamp, text, date, boolean } from 'drizzle-orm/pg-core';
 
 // Family tree members
 export const people = pgTable('people', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
+  maidenName: varchar('maiden_name', { length: 255 }),
   birthYear: integer('birth_year'),
+  birthDate: date('birth_date'),
+  birthPlace: varchar('birth_place', { length: 255 }),
   deathYear: integer('death_year'),
+  deathDate: date('death_date'),
+  deathPlace: varchar('death_place', { length: 255 }),
+  marriagePlace: varchar('marriage_place', { length: 255 }),
   gender: varchar('gender', { length: 20 }), // 'male', 'female', 'other'
+  isFavorite: boolean('is_favorite').default(false),
   notes: text('notes'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),

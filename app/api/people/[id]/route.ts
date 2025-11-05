@@ -16,9 +16,16 @@ export async function PATCH(
       .update(people)
       .set({
         name: body.name,
+        maidenName: body.maidenName || null,
         birthYear: body.birthYear || null,
+        birthDate: body.birthDate || null,
+        birthPlace: body.birthPlace || null,
         deathYear: body.deathYear || null,
+        deathDate: body.deathDate || null,
+        deathPlace: body.deathPlace || null,
+        marriagePlace: body.marriagePlace || null,
         gender: body.gender || null,
+        isFavorite: body.isFavorite !== undefined ? body.isFavorite : undefined,
         notes: body.notes || null,
       })
       .where(eq(people.id, id))
